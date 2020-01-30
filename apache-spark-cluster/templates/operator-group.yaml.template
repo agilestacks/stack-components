@@ -1,0 +1,9 @@
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  annotations:
+    olm.providedAPIs: SparkApplication.v1.radanalytics.io,SparkCluster.v1.radanalytics.io,SparkHistoryServer.v1.radanalytics.io
+  name: ${component.custom-spark.name}-operator-group
+spec:
+  targetNamespaces:
+  - ${component.custom-spark.namespace}

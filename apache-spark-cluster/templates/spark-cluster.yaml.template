@@ -1,0 +1,11 @@
+apiVersion: radanalytics.io/v1
+kind: SparkCluster
+metadata:
+  name: ${component.custom-spark.name}
+  namespace: ${component.custom-spark.namespace}
+spec:
+  customImage: ${component.custom-spark.image}
+  worker:
+    instances: '${component.custom-spark.numberOfWorkers}'
+  master:
+    instances: '${component.custom-spark.numberOfMasters}'

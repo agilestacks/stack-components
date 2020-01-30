@@ -1,0 +1,47 @@
+version: 1
+kind: component
+meta:
+  name: apache-spark-cluster
+  source:
+    dir: .
+
+requires:
+  - kubernetes
+provides:
+  - apache-spark-cluster
+
+lifecycle:
+  verbs:
+    - deploy
+    - undeploy
+
+parameters:
+  - name: dns.domain
+    env: DOMAIN_NAME
+  - name: component.ingress.ssoFqdn
+  - name: component.ingress.protocol
+  - name: component.custom-spark
+    parameters:
+      - name: name
+        value: spark
+        env: NAME
+      - name: namespace
+        value: spark
+        env: NAMESPACE
+      - name: image
+        value: quay.io/radanalyticsio/openshift-spark:2.4.4-1
+        env: IMAGE
+      - name: numberOfWorkers
+        value: 2
+      - name: numberOfMasters
+        value: 1
+        env: NUMBER_OF_MASTERS
+
+outputs:
+  - name: component.custom-spark.dashboard.url
+    value: >-
+      ${component.ingress.protocol}://${component.custom-spark.name}-ui.${component.ingress.ssoFqdn}
+
+templates:
+  files:
+    - templates/*.template
