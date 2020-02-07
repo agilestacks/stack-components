@@ -4,6 +4,7 @@ metadata:
   name: ${component.custom-spark.name}-ui
   annotations:
     kubernetes.io/ingress.class: "traefik"
+    kubernetes.io/tls-acme: "true"
 spec:
   rules:
   - host: ${component.custom-spark.name}-ui.${component.ingress.ssoFqdn}
@@ -13,3 +14,8 @@ spec:
         backend:
           serviceName: ${component.custom-spark.name}-ui
           servicePort: 8080
+  tls:
+    - hosts:
+      - ${component.ingress.ssoFqdn}
+      - ${component.custom-spark.name}-ui.${component.ingress.ssoFqdn}
+      secretName: ${component.custom-spark.name}-ui-tls

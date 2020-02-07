@@ -8,11 +8,17 @@ IMAGE 						?=
 
 kubectl ?= kubectl --context="$(DOMAIN_NAME)" -n "$(NAMESPACE)"
 
-RETRIES = 20
+RETRIES = 30
 
 EXAMPLE_POD_NAME = example-task
 EXAMPLE_POD_IMAGE = bde2020/spark-base:2.4.4-hadoop2.7
 EXAMPLE_SERVICE_NAME = spark-client
+
+ifneq (,$(filter tls-ingress,$(HUB_PROVIDES)))
+	INGRESS:=ingress-tls
+else
+	INGRESS:=ingress
+endif
 
 namespace:
 	-$(kubectl) create ns "$(NAMESPACE)"
@@ -53,7 +59,7 @@ spark-cluster:
 	done;
 
 ingress:
-	$(kubectl) apply -f templates/ingress.yaml
+	$(kubectl) apply -f templates/$(INGRESS).yaml
 
 run-example-task:
 	$(kubectl) create service clusterip $(EXAMPLE_SERVICE_NAME) --clusterip='None'
@@ -71,7 +77,7 @@ run-example-task:
 deploy: namespace spark-operator-subscription spark-cluster ingress run-example-task
 
 undeploy:
-	-$(kubectl) delete -f templates/ingress.yaml
+	-$(kubectl) delete -f templates/$(INGRESS).yaml
 	-$(kubectl) delete -f templates/spark-cluster.yaml
 	-$(kubectl) delete -f templates/subscription.yaml
 	-$(kubectl) delete -f templates/operator-group.yaml
