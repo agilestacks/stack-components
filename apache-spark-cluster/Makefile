@@ -1,12 +1,14 @@
 .DEFAULT_GOAL := deploy
 
-DOMAIN_NAME       ?= dev.test.superhub.io
-NAMESPACE         ?= spark
-NAME 				      ?= spark
-NUMBER_OF_MASTERS ?= 1
-IMAGE 						?=
+DOMAIN_NAME       		?= dev.test.superhub.io
+NAMESPACE         		?= spark
+OPERATOR_NAMESPACE 		?= operators
+NAME 				      		?= spark
+NUMBER_OF_MASTERS 		?= 1
+IMAGE 								?=
 
 kubectl ?= kubectl --context="$(DOMAIN_NAME)" -n "$(NAMESPACE)"
+kubectlop ?= kubectl --context="$(DOMAIN_NAME)" -n "$(OPERATOR_NAMESPACE)"
 
 RETRIES = 30
 
@@ -20,13 +22,16 @@ else
 	INGRESS:=ingress
 endif
 
+# Create a k8s namespace for Apache Spark cluster
 namespace:
 	-$(kubectl) create ns "$(NAMESPACE)"
 
+# Create an Operator Subscription in operator namespace
+# Operator Subscriptions link deployed Operators with Operator Catalog and keep them up to date when new versions are released.
+# Subscription for Spark Operator has been taken from https://operatorhub.io/install/radanalytics-spark.yaml
 spark-operator-subscription:
-	$(kubectl) apply -f templates/operator-group.yaml
-	$(kubectl) apply -f templates/subscription.yaml
-	$(eval csv_name=$(kubectl) get subscription \
+	$(kubectlop) apply -f templates/subscription.yaml
+	$(eval csv_name=$(kubectlop) get subscription \
 		$(NAME)-subscription -o json | jq -cr .status.installedCSV)
 	@for i in $$(seq 1 $(RETRIES)); do \
 		if [ "$$($(kubectl) get clusterserviceversion `$(csv_name)` -o json | jq -cr '.status.phase')" = "Succeeded" ]; then \
@@ -41,6 +46,7 @@ spark-operator-subscription:
 		sleep 3; \
 	done;
 
+# Deploy Spark Cluster crd to provision the cluster. Wait until all pods are up
 spark-cluster:
 	$(kubectl) apply -f templates/spark-cluster.yaml
 	$(eval check_masters=$(kubectl) get pods -l 'radanalytics.io/SparkCluster=$(NAME),radanalytics.io/podType=master' \
@@ -58,9 +64,11 @@ spark-cluster:
 		sleep 3; \
 	done;
 
+# Create an ingress to expose Spark dashboard to the world
 ingress:
 	$(kubectl) apply -f templates/$(INGRESS).yaml
 
+# Submit an example task to Apache Spark cluster to verify that it's up and running
 run-example-task:
 	$(kubectl) create service clusterip $(EXAMPLE_SERVICE_NAME) --clusterip='None'
 	$(kubectl) run --generator=run-pod/v1 --labels="app=$(EXAMPLE_SERVICE_NAME)" \
@@ -79,5 +87,3 @@ deploy: namespace spark-operator-subscription spark-cluster ingress run-example-
 undeploy:
 	-$(kubectl) delete -f templates/$(INGRESS).yaml
 	-$(kubectl) delete -f templates/spark-cluster.yaml
-	-$(kubectl) delete -f templates/subscription.yaml
-	-$(kubectl) delete -f templates/operator-group.yaml
