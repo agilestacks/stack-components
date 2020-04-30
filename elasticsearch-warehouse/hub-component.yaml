@@ -1,0 +1,115 @@
+---
+version: 1
+kind: component
+meta:
+  name: elasticsearch-warehouse
+  title: Elasticsearch Warehouse
+  brief: Elasticsearch Cluster for Data Warehousing
+  description: >
+    ElasticSearch is a battle-tested, scalable, and performant indexing and query engine.  This component makes it easy to deploy ElasticSearch in a tunable clustered configuration.  This also includes Kibana as a front-end.  Kibana and ElasticSearch are auto-configured to work together using our metadata management system and our Single Sign-On solution.
+  category: App Stack
+  version: 1.6.0
+  maturity: beta
+  license: Apache
+  source:
+    dir: elasticsearch-warehouse
+    git:
+      remote: https://github.com/agilestacks/stack-components
+      ref: master
+
+requires:
+  - external-dns
+  - cert-manager
+  - kubernetes
+  - ingress
+
+provides:
+  - elasticsearch
+
+parameters:
+  - name: dns.domain
+    env: DOMAIN_NAME
+  - name: component.elasticsearch
+    parameters:
+    - name: version
+      value: 1.6.0
+    - name:  name
+      value: es-${dns.domain}
+      env:   COMPONENT_NAME
+    - name: api.fqdn
+      value: esapi-${component.elasticsearch.name}.${dns.domain}
+    - name: kibana.fqdn
+      value: es.${dns.domain}
+    - name: api.url
+      value: ${component.ingress.protocol}://${component.elasticsearch.api.fqdn}
+      env: ELASTICSEARCH_API_URL
+    - name: kibana.url
+      value: ${component.ingress.protocol}://${component.elasticsearch.api.fqdn}
+      env: ELASTICSEARCH_API_URL
+    - name: kibana.cookieKey
+      value: REPLACEMEWITHSOMETHINGSECURE
+    - name: master
+      parameters:
+      - name: replicas
+        value: 1
+      - name: volumeSize
+        value: 10Gi
+      - name: storageClass
+        value: default
+      - name: resources.cpu.limits
+        value: 1
+      - name: resources.cpu.requests
+        value: 200m
+      - name: resources.mem.limits
+        value: 1Gi
+      - name: resources.mem.requests
+        value: 1Gi
+      - name: javaOpts
+        value: "-Xms512m -Xmx512m"
+    - name: dataNode
+      parameters:
+      - name: replicas
+        value: 1
+      - name: volumeSize
+        value: 10Gi
+      - name: storageClass
+        value: default
+      - name: resources.cpu.limits
+        value: 1
+      - name: resources.cpu.requests
+        value: 200m
+      - name: resources.mem.limits
+        value: 1Gi
+      - name: resources.mem.requests
+        value: 1Gi
+      - name: javaOpts
+        value: "-Xms512m -Xmx512m"
+    - name: client
+      parameters:
+      - name: replicas
+        value: 1
+      - name: volumeSize
+        value: 10Gi
+      - name: storageClass
+        value: default
+      - name: resources.cpu.limits
+        value: 1
+      - name: resources.cpu.requests
+        value: 200m
+      - name: resources.mem.limits
+        value: 1Gi
+      - name: resources.mem.requests
+        value: 1Gi
+      - name: javaOpts
+        value: "-Xms512m -Xmx512m"
+
+templates:
+  kind: mustache
+  files:
+    - "*.template"
+
+outputs:
+  - name: component.elasticsearch.kibana.url
+    brief: URL for the Kibana front-end to this ElasticSearch deployment
+  - name: component.elasticsearch.api.url
+    brief: URL for the API endpoint of this ElasticSearch deployment
