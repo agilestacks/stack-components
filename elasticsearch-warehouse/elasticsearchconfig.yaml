@@ -1,0 +1,17 @@
+cluster:
+  name: {{component.elasticsearch.name}}
+http:
+  enabled: true
+  compression: true
+opendistro_security:
+  ssl:
+    transport:
+      pemkey_filepath: node-key.pem
+      pemcert_filepath: node-cert.pem
+      trustedcas_filepath: root-ca.pem
+    http:
+      enabled: true
+      pemkey_filepath: node-key.pem
+      pemcert_filepath: node-cert.pem
+      trustedcas_filepath: root-ca.pem
+

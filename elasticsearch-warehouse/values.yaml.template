@@ -17,7 +17,7 @@ kibana:
   imageTag: 1.6.0
   replicas: 1
   port: 5601
-  externalPort: 443
+  externalPort: 80
   resources: {}
   #  limits:
   #    cpu: 2500m
@@ -40,8 +40,8 @@ kibana:
       enabled: false
       existingCertSecret:
     elasticsearch:
-      enabled: false
-      existingCertSecret:
+      enabled: true
+      existingCertSecret: kibana-certs
 
   configDirectory: "/usr/share/kibana/config"
   certsDirectory: "/usr/share/kibana/certs"
@@ -49,14 +49,14 @@ kibana:
   ingress:
     ## Set to true to enable ingress record generation
     enabled: true
-    annotations: {}
+    annotations:
       #kubernetes.io/ingress.class: traefik
       kubernetes.io/tls-acme: "true"
     labels: {}
     path: /
     hosts:
     - {{component.elasticsearch.kibana.fqdn}}
-    tls: []
+    tls:
     - secretName: {{component.elasticsearch.name}}-kibana-tls
       hosts:
         - {{component.elasticsearch.kibana.fqdn}}
@@ -71,19 +71,34 @@ kibana:
     server.host: "0"
 
     ## Replace with Elasticsearch DNS name picked during Service deployment
-    elasticsearch.hosts: {{component.elasticsearch.api.fqdn}}
+    elasticsearch.hosts: {{component.elasticsearch.api.url.internal}}
     elasticsearch.requestTimeout: 360000
 
-    # Not needed. TLS will be provided by Ingress
     ## Kibana TLS Config
-    #server.ssl.enabled: true
+    server.ssl.enabled: false
     #server.ssl.key: /usr/share/kibana/certs/kibana-key.pem
     #server.ssl.certificate: /usr/share/kibana/certs/kibana-crt.pem
-    #elasticsearch.ssl.certificateAuthorities: /usr/share/kibana/certs/kibana-root-ca.pem
+    elasticsearch.ssl.certificateAuthorities: ["/usr/share/kibana/certs/elk-rest-root-ca.pem"]
+
+    elasticsearch.username: kibanaserver
+    elasticsearch.password: kibanaserver
+    elasticsearch.requestHeadersWhitelist: ["securitytenant","Authorization"]
+    opendistro_security.multitenancy.enabled: true
+    opendistro_security.multitenancy.tenants.enable_global: true
+    opendistro_security.multitenancy.tenants.enable_private: true
+    opendistro_security.multitenancy.tenants.preferred: ["Private", "Global"]
+    opendistro_security.multitenancy.enable_filter: false
 
     opendistro_security.cookie.secure: true
     opendistro_security.cookie.password: {{component.elasticsearch.kibana.cookieKey}}
 
+    # openid stuff
+    opendistro_security.auth.type: openid
+    opendistro_security.openid.connect_url: {{component.dex.issuer}}/.well-known/openid-configuration
+    opendistro_security.openid.client_id: {{component.elasticsearch.name}}-kibana
+    opendistro_security.openid.client_secret: {{component.elasticsearch.kibana.openIdSecret}}
+    opendistro_security.openid.base_redirect_url: {{component.elasticsearch.kibana.url}}
+    opendistro_security.openid.logout_url: {{component.elasticsearch.kibana.signoutUrl}}
   ## Node labels for pod assignment
   ## ref: https://kubernetes.io/docs/user-guide/node-selection/
   #
@@ -92,6 +107,7 @@ kibana:
   ## Tolerations for pod assignment
   ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
   ##
+
   tolerations: []
 
   affinity: {}
@@ -126,7 +142,7 @@ elasticsearch:
     enabled: true
     path: "/usr/share/elasticsearch/plugins/opendistro_security/securityconfig"
     actionGroupsSecret:
-    configSecret:
+    configSecret: es-security-config
     internalUsersSecret:
     rolesSecret:
     rolesMappingSecret:
@@ -141,13 +157,13 @@ elasticsearch:
   ssl:
     ## TLS is mandatory for the transport layer and can not be disabled
     transport:
-      existingCertSecret:
+      existingCertSecret: transport-certs
     rest:
-      enabled: false
-      existingCertSecret:
+      enabled: true
+      existingCertSecret: rest-certs
     admin:
-      enabled: false
-      existingCertSecret:
+      enabled: true
+      existingCertSecret: admin-certs
 
   master:
     enabled: true
@@ -185,11 +201,11 @@ elasticsearch:
 
     resources:
       limits:
-        cpu: {{component.elasticsearch.master.cpu.limits}}
-        memory: {{component.elasticsearch.master.mem.limits}}
+        cpu: {{component.elasticsearch.master.resources.cpu.limits}}
+        memory: {{component.elasticsearch.master.resources.mem.limits}}
       requests:
-        cpu: {{component.elasticsearch.master.cpu.requests}}
-        memory: {{component.elasticsearch.master.mem.requests}}
+        cpu: {{component.elasticsearch.master.resources.cpu.requests}}
+        memory: {{component.elasticsearch.master.resources.mem.requests}}
     javaOpts: {{component.elasticsearch.master.javaOpts}}
     podDisruptionBudget:
       enabled: false
@@ -255,11 +271,11 @@ elasticsearch:
 
     resources:
       limits:
-        cpu: {{component.elasticsearch.dataNode.cpu.limits}}
-        memory: {{component.elasticsearch.dataNode.mem.limits}}
+        cpu: {{component.elasticsearch.dataNode.resources.cpu.limits}}
+        memory: {{component.elasticsearch.dataNode.resources.mem.limits}}
       requests:
-        cpu: {{component.elasticsearch.dataNode.cpu.requests}}
-        memory: {{component.elasticsearch.dataNode.mem.requests}}
+        cpu: {{component.elasticsearch.dataNode.resources.cpu.requests}}
+        memory: {{component.elasticsearch.dataNode.resources.mem.requests}}
     javaOpts: {{component.elasticsearch.dataNode.javaOpts}}
     podDisruptionBudget:
       enabled: false
@@ -312,24 +328,25 @@ elasticsearch:
     ingress:
       ## Set to true to enable ingress record generation
       enabled: true
-      annotations: {}
+      annotations:
+        traefik.protocol: https
       #  kubernetes.io/ingress.class: nginx
         kubernetes.io/tls-acme: "true"
       labels: {}
       path: /
       hosts:
       - {{component.elasticsearch.api.fqdn}}
-      tls: []
+      tls:
       - secretName: {{component.elasticsearch.name}}-client-tls
         hosts:
         - {{component.elasticsearch.api.fqdn}}
     resources:
       limits:
-        cpu: {{component.elasticsearch.client.cpu.limits}}
-        memory: {{component.elasticsearch.client.mem.limits}}
+        cpu: {{component.elasticsearch.client.resources.cpu.limits}}
+        memory: {{component.elasticsearch.client.resources.mem.limits}}
       requests:
-        cpu: {{component.elasticsearch.client.cpu.requests}}
-        memory: {{component.elasticsearch.client.mem.requests}}
+        cpu: {{component.elasticsearch.client.resources.cpu.requests}}
+        memory: {{component.elasticsearch.client.resources.mem.requests}}
     javaOpts: {{component.elasticsearch.client.javaOpts}}
     podDisruptionBudget:
       enabled: false
@@ -359,56 +376,48 @@ elasticsearch:
                   - data
     podAnnotations: {}
 
-  config: {}
-    ## Example Config
-    # opendistro_security.allow_unsafe_democertificates: false
-    # opendistro_security.allow_default_init_securityindex: true
-    # opendistro_security.audit.type: internal_elasticsearch
-    # opendistro_security.enable_snapshot_restore_privilege: true
-    # opendistro_security.check_snapshot_restore_write_privileges: true
-    # cluster.routing.allocation.disk.threshold_enabled: false
-    # opendistro_security.audit.config.disabled_rest_categories: NONE
-    # opendistro_security.audit.config.disabled_transport_categories: NONE
-    #cluster:
-    #  name: {{component.elasticsearch.name}}
-    # node:
-    #   master: ${NODE_MASTER}
-    #   data: ${NODE_DATA}
-    #   name: ${NODE_NAME}
-    #   ingest: ${NODE_INGEST}
-    #   max_local_storage_nodes: 1
-    #   attr.box_type: hot
+  config:
+    opendistro_security.allow_unsafe_democertificates: false
+    opendistro_security.allow_default_init_securityindex: true
+    opendistro_security.audit.type: internal_elasticsearch
+    opendistro_security.enable_snapshot_restore_privilege: true
+    opendistro_security.check_snapshot_restore_write_privileges: true
+    cluster.routing.allocation.disk.threshold_enabled: false
+    opendistro_security.audit.config.disabled_rest_categories: NONE
+    opendistro_security.audit.config.disabled_transport_categories: NONE
+    cluster:
+      name: {{component.elasticsearch.name}}
 
-    # processors: ${PROCESSORS:1}
+    network.host: "0.0.0.0"
+    bootstrap.memory_lock: false
+    discovery.zen.ping.unicast.hosts: elasticsearch-cluster
+    discovery.zen.minimum_master_nodes: 1
+    xpack.security.enabled: false
+    xpack.monitoring.enabled: false
 
-    # network.host: ${NETWORK_HOST}
+    thread_pool.bulk.queue_size: 800
 
-    # thread_pool.bulk.queue_size: 800
+    path:
+      data: /usr/share/elasticsearch/data
+      logs: /usr/share/elasticsearch/logs
 
-    # path:
-    #   data: /usr/share/elasticsearch/data
-    #   logs: /usr/share/elasticsearch/logs
+    http:
+      compression: true
 
-    # http:
-    #   enabled: ${HTTP_ENABLE}
-    #   compression: true
+    opendistro_security.ssl.transport.pemcert_filepath: elk-transport-crt.pem
+    opendistro_security.ssl.transport.pemkey_filepath: elk-transport-key.pem
+    opendistro_security.ssl.transport.pemtrustedcas_filepath: elk-transport-root-ca.pem
+    opendistro_security.ssl.transport.enforce_hostname_verification: false
 
-    # discovery:
-    #   zen:
-    #     ping.unicast.hosts: ${DISCOVERY_SERVICE}
-    #     minimum_master_nodes: ${NUMBER_OF_MASTERS}
-
-    # # TLS Configuration Transport Layer
-    # opendistro_security.ssl.transport.pemcert_filepath: elk-transport-crt.pem
-    # opendistro_security.ssl.transport.pemkey_filepath: elk-transport-key.pem
-    # opendistro_security.ssl.transport.pemtrustedcas_filepath: elk-transport-root-ca.pem
-    # opendistro_security.ssl.transport.enforce_hostname_verification: false
-
-    # # TLS Configuration REST Layer
-    # opendistro_security.ssl.http.enabled: true
-    # opendistro_security.ssl.http.pemcert_filepath: elk-rest-crt.pem
-    # opendistro_security.ssl.http.pemkey_filepath: elk-rest-key.pem
-    # opendistro_security.ssl.http.pemtrustedcas_filepath: elk-rest-root-ca.pem
+    opendistro_security.ssl.http.enabled: true
+    opendistro_security.ssl.http.pemcert_filepath: elk-rest-crt.pem
+    opendistro_security.ssl.http.pemkey_filepath: elk-rest-key.pem
+    opendistro_security.ssl.http.pemtrustedcas_filepath: elk-rest-root-ca.pem
+    opendistro_security.ssl.http.enforce_hostname_verification: false
+    opendistro_security.authcz.admin_dn:
+    - "{{component.elasticsearch.tls.admin.subject}}"
+    opendistro_security.nodes_dn:
+    - "{{component.elasticsearch.tls.node.subject.}}"
 
   log4jConfig: ""
 

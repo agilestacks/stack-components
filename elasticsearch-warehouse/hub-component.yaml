@@ -18,7 +18,6 @@ meta:
       ref: master
 
 requires:
-  - external-dns
   - cert-manager
   - kubernetes
   - ingress
@@ -29,25 +28,48 @@ provides:
 parameters:
   - name: dns.domain
     env: DOMAIN_NAME
+  - name: dns.name
   - name: component.elasticsearch
     parameters:
     - name: version
       value: 1.6.0
     - name:  name
-      value: es-${dns.domain}
+      value: es-${dns.name}
       env:   COMPONENT_NAME
+    - name: namespace
+      value: elasticsearch
+      env: NAMESPACE
     - name: api.fqdn
-      value: esapi-${component.elasticsearch.name}.${dns.domain}
+      value: esapi-${component.elasticsearch.name}.${component.ingress.ssoUrlPrefix}.${dns.domain}
     - name: kibana.fqdn
-      value: es.${dns.domain}
+      value: kibana-${component.elasticsearch.name}.${component.ingress.urlPrefix}.${dns.domain}
+    - name: api.host.internal
+      value: ${component.elasticsearch.name}-opendistro-es-client-service:9200
+      env: ES_INTERNAL_API_HOST
+    - name: api.url.internal
+      value: https://${api.host.internal}
     - name: api.url
       value: ${component.ingress.protocol}://${component.elasticsearch.api.fqdn}
-      env: ELASTICSEARCH_API_URL
+      env: ES_API_URL
     - name: kibana.url
-      value: ${component.ingress.protocol}://${component.elasticsearch.api.fqdn}
-      env: ELASTICSEARCH_API_URL
+      value: ${component.ingress.protocol}://${component.elasticsearch.kibana.fqdn}
+      env: ES_KIBANA_URL
+    # TODO - add a switch for dev
+    - name: signout.url
+      value: https://agilestacks.okta.com/login/signout
     - name: kibana.cookieKey
-      value: REPLACEMEWITHSOMETHINGSECURE
+      value: REPLACEMEWITHSOMETHINGSECURETHATISATLEAST32DIGITSLONG
+    - name: kibana.openIdSecret
+      value: REPLACEMEWITHSOMETHINGSECURETHATISATLEAST32DIGITSLONG
+    - name: tls.ca.subject
+      value: "/C=US/ST=CA/L=SF/O=ElasticSearch/OU=root/CN=${DOMAIN_NAME}/emailAddress=admin@superhub.io"
+      env: ES_CA_SUBJECT
+    - name: tls.admin.subject
+      value: "/C=US/ST=CA/L=SF/O=ElasticSearch/OU=admin/CN=${DOMAIN_NAME}/emailAddress=admin@superhub.io"
+      env: ES_ADMIN_SUBJECT
+    - name: tls.node.subject
+      value: "/C=US/ST=CA/L=SF/O=ElasticSearch/OU=node/CN=${DOMAIN_NAME}/emailAddress=admin@superhub.io"
+      env: ES_NODE_SUBJECT
     - name: master
       parameters:
       - name: replicas
