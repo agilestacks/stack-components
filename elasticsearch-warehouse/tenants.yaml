@@ -1,8 +1,0 @@
-
-_meta:
-  type: "tenants"
-  config_version: 1
-
-admin_tenant:
-  reserved: false
-  description: "Demo tenant for admin user"

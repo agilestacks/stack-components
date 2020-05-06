@@ -8,7 +8,7 @@ meta:
   description: >
     ElasticSearch is a battle-tested, scalable, and performant indexing and query engine.  This component makes it easy to deploy ElasticSearch in a tunable clustered configuration.  This also includes Kibana as a front-end.  Kibana and ElasticSearch are auto-configured to work together using our metadata management system and our Single Sign-On solution.
   category: App Stack
-  version: 1.6.0
+  version: 7.6.2
   maturity: beta
   license: Apache
   source:
@@ -32,8 +32,8 @@ parameters:
   - name: component.dex.issuer
   - name: component.elasticsearch
     parameters:
-    - name: version
-      value: 1.6.0
+    - name: imageVersion
+      value: 7.6.2
     - name:  name
       value: es-${dns.name}
       env:   COMPONENT_NAME
@@ -41,9 +41,7 @@ parameters:
       value: elasticsearch
       env: NAMESPACE
     - name: api.fqdn
-      value: esapi-${component.elasticsearch.name}.${component.ingress.urlPrefix}.${dns.domain}
-    - name: kibana.fqdn
-      value: kibana-${component.elasticsearch.name}.${component.ingress.urlPrefix}.${dns.domain}
+      value: esapi-${component.elasticsearch.name}.${component.ingress.ssoUrlPrefix}.${dns.domain}
     - name: api.host.internal
       value: ${component.elasticsearch.name}-opendistro-es-client-service
       env: ES_INTERNAL_API_HOST
@@ -52,20 +50,28 @@ parameters:
     - name: api.url
       value: ${component.ingress.protocol}://${component.elasticsearch.api.fqdn}
       env: ES_API_URL
-    - name: kibana.url
-      value: ${component.ingress.protocol}://${component.elasticsearch.kibana.fqdn}
-      env: ES_KIBANA_URL
     # TODO - add a switch for dev
     - name: signout.url
       value: https://agilestacks.okta.com/login/signout
-    - name: kibana.cookieKey
-      value: REPLACEMEWITHSOMETHINGSECURETHATISATLEAST32DIGITSLONG
-    - name: kibana.openIdSecret
-      value: REPLACEMEWITHSOMETHINGSECURETHATISATLEAST32DIGITSLONG
-    - name: tls.node.subject
-      value: "CN=${component.elasticsearch.name}*"
-    - name: tls.admin.subject
-      value: "CN=ADMIN,OU=UNIT,O=ORG,L=SF,ST=California,C=US"
+    - name: kibana
+      parameters:
+      - name: replicas
+        value: 1
+      - name: fqdn
+        value: kibana-${component.elasticsearch.name}.${component.ingress.ssoUrlPrefix}.${dns.domain}
+      - name: url
+        value: ${component.ingress.protocol}://${component.elasticsearch.kibana.fqdn}
+        env: ES_KIBANA_URL
+      - name: resources.cpu.limits
+        value: 1
+      - name: resources.cpu.requests
+        value: 500m
+      - name: resources.mem.limits
+        value: 2000Mi
+      - name: resources.mem.requests
+        value: 1000Mi
+      - name: volumeSize
+        value: 5Gi
     - name: master
       parameters:
       - name: replicas
@@ -82,8 +88,26 @@ parameters:
         value: 2000Mi
       - name: resources.mem.requests
         value: 1500Mi
-      - name: javaOpts
-        value: "-Xms768m -Xmx768m"
+      - name: heapSize
+        value: 256m
+    - name: coordinator
+      parameters:
+      - name: replicas
+        value: 1
+      - name: volumeSize
+        value: 10Gi
+      - name: storageClass
+        value: default
+      - name: resources.cpu.limits
+        value: 1
+      - name: resources.cpu.requests
+        value: 200m
+      - name: resources.mem.limits
+        value: 2000Mi
+      - name: resources.mem.requests
+        value: 1500Mi
+      - name: heapSize
+        value: 256m
     - name: dataNode
       parameters:
       - name: replicas
@@ -95,14 +119,14 @@ parameters:
       - name: resources.cpu.limits
         value: 1
       - name: resources.cpu.requests
-        value: 200m
+        value: 400m
       - name: resources.mem.limits
-        value: 1Gi
+        value: 4Gi
       - name: resources.mem.requests
-        value: 1Gi
-      - name: javaOpts
-        value: "-Xms512m -Xmx512m"
-    - name: client
+        value: 3Gi
+      - name: heapSize
+        value: 2048m
+    - name: ingest
       parameters:
       - name: replicas
         value: 1
@@ -111,15 +135,15 @@ parameters:
       - name: storageClass
         value: default
       - name: resources.cpu.limits
-        value: 1
+        value: 300m
       - name: resources.cpu.requests
-        value: 200m
+        value: 100m
       - name: resources.mem.limits
-        value: 1Gi
+        value: 2Gi
       - name: resources.mem.requests
         value: 1Gi
-      - name: javaOpts
-        value: "-Xms512m -Xmx512m"
+      - name: heapSize
+        value: 256m
 
 templates:
   kind: mustache

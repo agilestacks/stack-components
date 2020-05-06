@@ -1,5 +1,6 @@
-opendistro-build/
-values.yaml
-*.pem
-certs.cnf
-root-ca.srl
+helm-charts/
+values-coordinator.yaml
+values-data.yaml
+values-ingest.yaml
+values-kibana.yaml
+values-master.yaml
