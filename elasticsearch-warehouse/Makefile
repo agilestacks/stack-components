@@ -16,7 +16,7 @@ clean:
 
 fetch:
 	git clone https://github.com/opendistro-for-elasticsearch/opendistro-build
-	#git -C opendistro-build checkout $(CHART_BRANCH)
+	git -C opendistro-build checkout $(CHART_BRANCH)
 
 deploy: clean fetch create-certs
 ifneq ($(PRIOR_FAILED),)
@@ -68,5 +68,6 @@ post-install:
 undeploy:
 	-$(helm) delete $(COMPONENT_NAME)
 	-$(kubectl) delete secrets rest-certs transport-certs admin-certs es-security-config
+	-$(kubectl) delete pvc --all
 
 -include ../Mk/phonies

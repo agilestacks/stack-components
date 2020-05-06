@@ -65,7 +65,7 @@ parameters:
     - name: tls.node.subject
       value: "CN=${component.elasticsearch.name}*"
     - name: tls.admin.subject
-      value: "CN=${component.elasticsearch.name},OU=UNIT,O=ORG,L=SF,ST=California,C=US"
+      value: "CN=ADMIN,OU=UNIT,O=ORG,L=SF,ST=California,C=US"
     - name: master
       parameters:
       - name: replicas
