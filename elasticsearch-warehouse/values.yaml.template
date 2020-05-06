@@ -41,7 +41,7 @@ kibana:
       existingCertSecret:
     elasticsearch:
       enabled: true
-      existingCertSecret: kibana-certs
+      existingCertSecret: rest-certs
 
   configDirectory: "/usr/share/kibana/config"
   certsDirectory: "/usr/share/kibana/certs"
@@ -79,6 +79,7 @@ kibana:
     #server.ssl.key: /usr/share/kibana/certs/kibana-key.pem
     #server.ssl.certificate: /usr/share/kibana/certs/kibana-crt.pem
     elasticsearch.ssl.certificateAuthorities: ["/usr/share/kibana/certs/elk-rest-root-ca.pem"]
+    elasticsearch.ssl.verificationMode: "none"
 
     elasticsearch.username: kibanaserver
     elasticsearch.password: kibanaserver
@@ -98,7 +99,7 @@ kibana:
     opendistro_security.openid.client_id: {{component.elasticsearch.name}}-kibana
     opendistro_security.openid.client_secret: {{component.elasticsearch.kibana.openIdSecret}}
     opendistro_security.openid.base_redirect_url: {{component.elasticsearch.kibana.url}}
-    opendistro_security.openid.logout_url: {{component.elasticsearch.kibana.signoutUrl}}
+    opendistro_security.openid.logout_url: {{component.elasticsearch.signout.url}}
   ## Node labels for pod assignment
   ## ref: https://kubernetes.io/docs/user-guide/node-selection/
   #
@@ -145,7 +146,7 @@ elasticsearch:
     configSecret: es-security-config
     internalUsersSecret:
     rolesSecret:
-    rolesMappingSecret:
+    rolesMappingSecret: es-security-config
     tenantsSecret:
 
   extraEnvs: []
@@ -390,12 +391,6 @@ elasticsearch:
 
     network.host: "0.0.0.0"
     bootstrap.memory_lock: false
-    discovery.zen.ping.unicast.hosts: elasticsearch-cluster
-    discovery.zen.minimum_master_nodes: 1
-    xpack.security.enabled: false
-    xpack.monitoring.enabled: false
-
-    thread_pool.bulk.queue_size: 800
 
     path:
       data: /usr/share/elasticsearch/data
@@ -413,11 +408,10 @@ elasticsearch:
     opendistro_security.ssl.http.pemcert_filepath: elk-rest-crt.pem
     opendistro_security.ssl.http.pemkey_filepath: elk-rest-key.pem
     opendistro_security.ssl.http.pemtrustedcas_filepath: elk-rest-root-ca.pem
-    opendistro_security.ssl.http.enforce_hostname_verification: false
     opendistro_security.authcz.admin_dn:
     - "{{component.elasticsearch.tls.admin.subject}}"
     opendistro_security.nodes_dn:
-    - "{{component.elasticsearch.tls.node.subject.}}"
+    - "{{component.elasticsearch.tls.node.subject}}"
 
   log4jConfig: ""
 

@@ -1,22 +1,28 @@
-#!/bin/sh
+#!/bin/bash -x
 
-SAN=${ES_INTERNAL_API_HOST}:${ES_INTERNAL_API_HOST}.${NAMESPACE}.svc.cluster.local:${ES_INTERNAL_API_HOST}.${NAMESPACE}.svc:${ES_INTERNAL_CLIENT_HOST}:${ES_INTERNAL_CLIENT_HOST}.${NAMESPACE}.svc.cluster.local:${ES_INTERNAL_CLIENT_HOST}.${NAMESPACE}.svc:
+export ALTNAME="DNS:${ES_INTERNAL_API_HOST},DNS:${ES_INTERNAL_API_HOST}.${NAMESPACE},DNS:${ES_INTERNAL_API_HOST}.${NAMESPACE}.svc.cluster.local"
 
 # Root CA
 openssl genrsa -out root-ca-key.pem 2048
-openssl req -new -x509 -sha256 -key root-ca-key.pem -out root-ca.pem -subj $ES_CA_SUBJECT
+openssl req -new -x509 -sha256 -key root-ca-key.pem  -days 3650 -out root-ca.pem -config certs.cnf
 
 # Admin cert
 openssl genrsa -out admin-key-temp.pem 2048
 openssl pkcs8 -inform PEM -outform PEM -in admin-key-temp.pem -topk8 -nocrypt -v1 PBE-SHA1-3DES -out admin-key.pem
-openssl req -new -key admin-key.pem -out admin.csr -subj $ES_ADMIN_SUBJECT
-openssl x509 -req -in admin.csr -CA root-ca.pem -CAkey root-ca-key.pem -CAcreateserial -sha256 -out admin.pem
+openssl req -new -key admin-key.pem -out admin.csr -config certs.cnf
+openssl x509 -req -in admin.csr -CA root-ca.pem -CAkey root-ca-key.pem -CAcreateserial -days 3650 -sha256 -out admin.pem -extensions v3_req -extfile certs.cnf
 
 # Node cert
 openssl genrsa -out node-key-temp.pem 2048
 openssl pkcs8 -inform PEM -outform PEM -in node-key-temp.pem -topk8 -nocrypt -v1 PBE-SHA1-3DES -out node-key.pem
-openssl req -new -key node-key.pem -out node.csr -subj $ES_NODE_SUBJECT
-openssl x509 -req -in node.csr -CA root-ca.pem -CAkey root-ca-key.pem -CAcreateserial -sha256 -out node.pem
+openssl req -new -key node-key.pem -out node.csr -config certs.cnf
+openssl x509 -req -in node.csr -CA root-ca.pem -CAkey root-ca-key.pem -CAcreateserial -days 3650 -sha256 -out node.pem -extensions v3_req -extfile certs.cnf
+
+# We derive the subject line and then put it into the values.yaml
+#export NODE_SUBJECT=$(openssl x509 -subject -nameopt RFC2253 -noout -in node.pem)
+#export ADMIN_SUBJECT=$(openssl x509 -subject -nameopt RFC2253 -noout -in admin.pem)
+
+#envsubst < values.int.yaml > values.yaml
 
 # Cleanup
 rm admin-key-temp.pem

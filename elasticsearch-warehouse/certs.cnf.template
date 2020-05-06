@@ -1,0 +1,21 @@
+[CA_default]
+copy_extensions = copy
+
+[req]
+default_bits = 4096
+prompt = no
+default_md = sha256
+distinguished_name = req_distinguished_name
+x509_extensions = v3_req
+
+[req_distinguished_name]
+C = US
+ST = California
+L = SF
+O = ORG
+OU = UNIT
+CN = {{component.elasticsearch.name}}
+
+[v3_req]
+subjectAltName=$ENV::ALTNAME
+
