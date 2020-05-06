@@ -52,8 +52,6 @@
 #   ldap
 #   noop
 
-
-
 _meta:
   type: "config"
   config_version: 2

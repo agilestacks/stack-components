@@ -64,10 +64,8 @@ parameters:
       value: REPLACEMEWITHSOMETHINGSECURETHATISATLEAST32DIGITSLONG
     - name: tls.node.subject
       value: "CN=${component.elasticsearch.name}*"
-      env: ES_NODE_SUBJECT
     - name: tls.admin.subject
-      value: "CN=${component.elasticsearch.name}*"
-      env: ES_ADMIN_SUBJECT
+      value: "CN=${component.elasticsearch.name},OU=UNIT,O=ORG,L=SF,ST=California,C=US"
     - name: master
       parameters:
       - name: replicas
@@ -81,11 +79,11 @@ parameters:
       - name: resources.cpu.requests
         value: 200m
       - name: resources.mem.limits
-        value: 1Gi
+        value: 2000Mi
       - name: resources.mem.requests
-        value: 1Gi
+        value: 1500Mi
       - name: javaOpts
-        value: "-Xms512m -Xmx512m"
+        value: "-Xms768m -Xmx768m"
     - name: dataNode
       parameters:
       - name: replicas

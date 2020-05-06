@@ -2,3 +2,4 @@ opendistro-build/
 values.yaml
 *.pem
 certs.cnf
+root-ca.srl

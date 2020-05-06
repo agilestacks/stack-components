@@ -10,13 +10,13 @@ openssl req -new -x509 -sha256 -key root-ca-key.pem  -days 3650 -out root-ca.pem
 openssl genrsa -out admin-key-temp.pem 2048
 openssl pkcs8 -inform PEM -outform PEM -in admin-key-temp.pem -topk8 -nocrypt -v1 PBE-SHA1-3DES -out admin-key.pem
 openssl req -new -key admin-key.pem -out admin.csr -config certs.cnf
-openssl x509 -req -in admin.csr -CA root-ca.pem -CAkey root-ca-key.pem -CAcreateserial -days 3650 -sha256 -out admin.pem -extfile certs.cnf
+openssl x509 -req -in admin.csr -CA root-ca.pem -CAkey root-ca-key.pem -CAcreateserial -days 3650 -sha256 -out admin.pem -extensions v3_req -extfile certs.cnf
 
 # Node cert
 openssl genrsa -out node-key-temp.pem 2048
 openssl pkcs8 -inform PEM -outform PEM -in node-key-temp.pem -topk8 -nocrypt -v1 PBE-SHA1-3DES -out node-key.pem
 openssl req -new -key node-key.pem -out node.csr -config certs.cnf
-openssl x509 -req -in node.csr -CA root-ca.pem -CAkey root-ca-key.pem -CAcreateserial -days 3650 -sha256 -out node.pem -extfile certs.cnf
+openssl x509 -req -in node.csr -CA root-ca.pem -CAkey root-ca-key.pem -CAcreateserial -days 3650 -sha256 -out node.pem -extensions v3_req -extfile certs.cnf
 
 # Cleanup
 rm admin-key-temp.pem

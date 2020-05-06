@@ -84,22 +84,25 @@ kibana:
     elasticsearch.username: kibanaserver
     elasticsearch.password: kibanaserver
     elasticsearch.requestHeadersWhitelist: ["securitytenant","Authorization"]
-    opendistro_security.multitenancy.enabled: true
-    opendistro_security.multitenancy.tenants.enable_global: true
-    opendistro_security.multitenancy.tenants.enable_private: true
-    opendistro_security.multitenancy.tenants.preferred: ["Private", "Global"]
-    opendistro_security.multitenancy.enable_filter: false
+    opendistro_security.multitenancy.enabled: false
+    #opendistro_security.multitenancy.tenants.enable_global: true
+    #opendistro_security.multitenancy.tenants.enable_private: true
+    #opendistro_security.multitenancy.tenants.preferred: ["Private", "Global"]
+    #opendistro_security.multitenancy.enable_filter: false
 
     opendistro_security.cookie.secure: true
     opendistro_security.cookie.password: {{component.elasticsearch.kibana.cookieKey}}
 
+    opendistro_security.auth.anonymous_auth_enabled: true
+
     # openid stuff
-    opendistro_security.auth.type: openid
-    opendistro_security.openid.connect_url: {{component.dex.issuer}}/.well-known/openid-configuration
-    opendistro_security.openid.client_id: {{component.elasticsearch.name}}-kibana
-    opendistro_security.openid.client_secret: {{component.elasticsearch.kibana.openIdSecret}}
-    opendistro_security.openid.base_redirect_url: {{component.elasticsearch.kibana.url}}
-    opendistro_security.openid.logout_url: {{component.elasticsearch.signout.url}}
+    #opendistro_security.auth.type: openid
+    #opendistro_security.openid.connect_url: {{component.dex.issuer}}/.well-known/openid-configuration
+    #opendistro_security.openid.client_id: {{component.elasticsearch.name}}-kibana
+    #opendistro_security.openid.client_secret: {{component.elasticsearch.kibana.openIdSecret}}
+    #opendistro_security.openid.base_redirect_url: {{component.elasticsearch.kibana.url}}
+    #opendistro_security.openid.logout_url: {{component.elasticsearch.signout.url}}
+
   ## Node labels for pod assignment
   ## ref: https://kubernetes.io/docs/user-guide/node-selection/
   #
@@ -142,12 +145,12 @@ elasticsearch:
   securityConfig:
     enabled: true
     path: "/usr/share/elasticsearch/plugins/opendistro_security/securityconfig"
-    actionGroupsSecret:
+    actionGroupsSecret: es-security-config
     configSecret: es-security-config
-    internalUsersSecret:
-    rolesSecret:
+    internalUsersSecret: es-security-config
+    rolesSecret: es-security-config
     rolesMappingSecret: es-security-config
-    tenantsSecret:
+    tenantsSecret: es-security-config
 
   extraEnvs: []
 
