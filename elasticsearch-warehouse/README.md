@@ -1,6 +1,6 @@
 # ElasticSearch Warehouse
 
-This component is an implementation of a tunable ElasticSearch cluster.
+This component is an implementation of a tunable ElasticSearch cluster using the OpenDistro elasticsearch helm chart.
 
 It has support for the custom configuration of:
 
