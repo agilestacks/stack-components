@@ -149,7 +149,17 @@ antiAffinity: "hard"
 
 # This is the node affinity settings as defined in
 # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#node-affinity-beta-feature
+# Uncomment below and tweak to bind Coordinator Nodes to a particular type of VM
 nodeAffinity: {}
+#  requiredDuringSchedulingIgnoredDuringExecution:
+#    nodeSelectorTerms:
+#    - matchExpressions:
+#      - key: beta.kubernetes.io/instance-type
+#        operator: In
+#        values:
+#        - r4.large
+#        - t3.large
+#        - m5.large
 
 # The default is to deploy all pods serially. By setting this to parallel all pods are started at
 # the same time when bootstrapping the cluster

@@ -18,7 +18,6 @@ meta:
       ref: master
 
 requires:
-  - cert-manager
   - kubernetes
   - ingress
 

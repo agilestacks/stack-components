@@ -12,7 +12,7 @@ PRIOR_FAILED := $(shell $(helm) list -q --pending --failed | grep $(COMPONENT_NA
 clean:
 	rm -rf helm-charts
 fetch:
-	git clone git@github.com:elastic/helm-charts.git
+	git clone https://github.com/elastic/helm-charts.git
 
 deploy: clean fetch
 ifneq ($(PRIOR_FAILED),)
